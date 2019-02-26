@@ -115,7 +115,7 @@ namespace STH1123.ReedSolomon
             if (sigma == null)
                 return false;
 
-            var errorLocations = findErrorLocations(sigma, received.Length);
+            var errorLocations = findErrorLocations(sigma);
             if (errorLocations == null)
                 return false;
 
@@ -124,7 +124,7 @@ namespace STH1123.ReedSolomon
 
             for (int i = 0; i < errorLocations.Length; i++)
             {
-                errorPositions[i] = received.Length - 1 - errorLocations[i];
+                errorPositions[i] = field.log(errorLocations[i]);
             }
 
             //Prepare erasures
@@ -209,10 +209,10 @@ namespace STH1123.ReedSolomon
 
             for (int i = 0; i < positions.Length; i++)
             {
-                int x = field.power(2, positionsReversed[i]);
+                int x = field.exp(positionsReversed[i]);
                 for (int j = 0; j < forneySyndromes.Coefficients.Length - 1; j++)
                 {
-                    forneySyndromes.Coefficients[forneySyndromesLength - j - 1] = field.multiply(forneySyndromes.getCoefficient(j), x) ^ forneySyndromes.getCoefficient(j + 1);
+                    forneySyndromes.Coefficients[forneySyndromesLength - j - 1] = GenericGF.addOrSubtract(field.multiply(forneySyndromes.getCoefficient(j), x), forneySyndromes.getCoefficient(j + 1));
                 }
             }
 
@@ -266,7 +266,7 @@ namespace STH1123.ReedSolomon
 
             foreach (int i in errorPositions)
             {
-                errataLocator = errataLocator.multiply(new GenericGFPoly(field, new int[] { 1 }, false).addOrSubtract(new GenericGFPoly(field, new int[] { field.power(2, i), 0 }, false)));
+                errataLocator = errataLocator.multiply(new GenericGFPoly(field, new int[] { 1 }, false).addOrSubtract(new GenericGFPoly(field, new int[] { field.exp(i), 0 }, false)));
             }
 
             return errataLocator;
@@ -291,27 +291,30 @@ namespace STH1123.ReedSolomon
             return omega;
         }
 
-        // Method modified by Sonic-The-Hedgehog-LNK1123 (github.com/Sonic-The-Hedgehog-LNK1123)
-        private int[] findErrorLocations(GenericGFPoly errorLocator, int receivedLength)
+        private int[] findErrorLocations(GenericGFPoly errorLocator)
         {
+            // This is a direct application of Chien's search
             int numErrors = errorLocator.Degree;
-
-            List<int> resultList = new List<int>();
-
-            for (int i = 0; i < receivedLength; i++)
+            if (numErrors == 1)
             {
-                if (errorLocator.simpleEvaluateAt(field.power(2, i)) == 0)
+                // shortcut
+                return new int[] { errorLocator.getCoefficient(1) };
+            }
+            int[] result = new int[numErrors];
+            int e = 0;
+            for (int i = 1; i < field.Size && e < numErrors; i++)
+            {
+                if (errorLocator.evaluateAt(i) == 0)
                 {
-                    resultList.Add(receivedLength - 1 - i);
+                    result[e] = field.inverse(i);
+                    e++;
                 }
             }
-            if (resultList.Count != numErrors)
+            if (e != numErrors)
             {
                 // throw new ReedSolomonException("Error locator degree does not match number of roots");
                 return null;
             }
-            int[] result = resultList.ToArray();
-
             return result;
         }
 
@@ -330,16 +333,7 @@ namespace STH1123.ReedSolomon
                 {
                     if (i != j)
                     {
-                        //denominator = field.multiply(denominator,
-                        //    GenericGF.addOrSubtract(1, field.multiply(errorLocations[j], xiInverse)));
-                        // Above should work but fails on some Apple and Linux JDKs due to a Hotspot bug.
-                        // Below is a funny-looking workaround from Steven Parkes
-                        int term = field.multiply(errorLocations[j], xiInverse);
-                        int termPlus1 = (term & 0x1) == 0 ? term | 1 : term & ~1;
-                        denominator = field.multiply(denominator, termPlus1);
-
-                        // removed in java version, not sure if this is right
-                        // denominator = field.multiply(denominator, GenericGF.addOrSubtract(1, field.multiply(errorLocations[j], xiInverse)));
+                        denominator = field.multiply(denominator, GenericGF.addOrSubtract(1, field.multiply(errorLocations[j], xiInverse)));
                     }
                 }
 

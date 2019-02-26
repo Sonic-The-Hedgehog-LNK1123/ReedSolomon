@@ -29,12 +29,12 @@ namespace STH1123.ReedSolomon
     /// <author>Sean Owen</author>
     public sealed class GenericGF
     {
-        public static GenericGF AZTEC_DATA_12 = new GenericGF(0x1069, 4096, 1); // x^12 + x^6 + x^5 + x^3 + 1
-        public static GenericGF AZTEC_DATA_10 = new GenericGF(0x409, 1024, 1); // x^10 + x^3 + 1
-        public static GenericGF AZTEC_DATA_6 = new GenericGF(0x43, 64, 1); // x^6 + x + 1
-        public static GenericGF AZTEC_PARAM = new GenericGF(0x13, 16, 1); // x^4 + x + 1
-        public static GenericGF QR_CODE_FIELD_256 = new GenericGF(0x011D, 256, 0); // x^8 + x^4 + x^3 + x^2 + 1
-        public static GenericGF DATA_MATRIX_FIELD_256 = new GenericGF(0x012D, 256, 1); // x^8 + x^5 + x^3 + x^2 + 1
+        public static GenericGF AZTEC_DATA_12 = new GenericGF(0x1069, 4096, 1, 2); // x^12 + x^6 + x^5 + x^3 + 1
+        public static GenericGF AZTEC_DATA_10 = new GenericGF(0x409, 1024, 1, 2); // x^10 + x^3 + 1
+        public static GenericGF AZTEC_DATA_6 = new GenericGF(0x43, 64, 1, 2); // x^6 + x + 1
+        public static GenericGF AZTEC_PARAM = new GenericGF(0x13, 16, 1, 2); // x^4 + x + 1
+        public static GenericGF QR_CODE_FIELD_256 = new GenericGF(0x011D, 256, 0, 2); // x^8 + x^4 + x^3 + x^2 + 1
+        public static GenericGF DATA_MATRIX_FIELD_256 = new GenericGF(0x012D, 256, 1, 2); // x^8 + x^5 + x^3 + x^2 + 1
         public static GenericGF AZTEC_DATA_8 = DATA_MATRIX_FIELD_256;
         public static GenericGF MAXICODE_FIELD_64 = AZTEC_DATA_6;
 
@@ -43,6 +43,7 @@ namespace STH1123.ReedSolomon
         private readonly int size;
         private readonly int primitive;
         private readonly int generatorBase;
+        private readonly int alpha;
 
         /// <summary>
         /// Create a representation of GF(size) using the given primitive polynomial.
@@ -54,23 +55,38 @@ namespace STH1123.ReedSolomon
         /// <param name="genBase">the factor b in the generator polynomial can be 0- or 1-based
         /// *  (g(x) = (x+a^b)(x+a^(b+1))...(x+a^(b+2t-1))).
         /// *  In most cases it should be 1, but for QR code it is 0.</param>
-        public GenericGF(int primitive, int size, int genBase)
+        /// <param name="alpha">the generator alpha</param>
+        public GenericGF(int primitive, int size, int genBase, int alpha = 2)
         {
+            // Constructor modified by Sonic-The-Hedgehog-LNK1123 (github.com/Sonic-The-Hedgehog-LNK1123)
+            // to add support for alpha powers other than 2
             this.primitive = primitive;
             this.size = size;
             this.generatorBase = genBase;
+            this.alpha = alpha;
 
             expTable = new int[size];
             logTable = new int[size];
             int x = 1;
-            for (int i = 0; i < size; i++)
+            if (alpha == 2)
             {
-                expTable[i] = x;
-                x <<= 1; // x = x * 2; we're assuming the generator alpha is 2
-                if (x >= size)
+                for (int i = 0; i < size; i++)
                 {
-                    x ^= primitive;
-                    x &= size - 1;
+                    expTable[i] = x;
+                    x <<= 1; // x = x * 2; the generator alpha is 2
+                    if (x >= size)
+                    {
+                        x ^= primitive;
+                        x &= size - 1;
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < size; i++)
+                {
+                    expTable[i] = x;
+                    x = multiplyNoLUT(x, alpha, primitive, size);
                 }
             }
             for (int i = 0; i < size - 1; i++)
@@ -78,6 +94,27 @@ namespace STH1123.ReedSolomon
                 logTable[expTable[i]] = i;
             }
             // logTable[0] == 0 but this should never be used
+        }
+
+        // Method added by Sonic-The-Hedgehog-LNK1123 (github.com/Sonic-The-Hedgehog-LNK1123)
+        internal int multiplyNoLUT(int x, int y, int primitive, int size)
+        {
+            int r = 0;
+            while (y > 0)
+            {
+                if (Convert.ToBoolean(y & 1))
+                {
+                    r ^= x;
+                }
+                y >>= 1;
+                x <<= 1;
+                if (x >= size)
+                {
+                    x ^= primitive;
+                    x &= size - 1;
+                }
+            }
+            return r;
         }
 
         /// <summary>
@@ -92,7 +129,7 @@ namespace STH1123.ReedSolomon
         /// <summary>
         /// Exps the specified a.
         /// </summary>
-        /// <returns>2 to the power of a in GF(size)</returns>
+        /// <returns>alpha to the power of a in GF(size)</returns>
         internal int exp(int a)
         {
             return expTable[a];
@@ -102,7 +139,7 @@ namespace STH1123.ReedSolomon
         /// Logs the specified a.
         /// </summary>
         /// <param name="a">A.</param>
-        /// <returns>base 2 log of a in GF(size)</returns>
+        /// <returns>base alpha log of a in GF(size)</returns>
         internal int log(int a)
         {
             if (a == 0)
@@ -141,18 +178,6 @@ namespace STH1123.ReedSolomon
         }
 
         /// <summary>
-        /// Raises a to the power of b.
-        /// </summary>
-        /// <param name="a">A.</param>
-        /// <param name="b">The b.</param>
-        /// <returns>a to the power of b in GF(size)</returns>
-        internal int power(int a, int b)
-        {
-            // Method added by Sonic-The-Hedgehog-LNK1123 (github.com/Sonic-The-Hedgehog-LNK1123)
-            return expTable[(logTable[a] * b) % (size - 1)];
-        }
-
-        /// <summary>
         /// Gets the size.
         /// </summary>
         public int Size
@@ -169,6 +194,15 @@ namespace STH1123.ReedSolomon
         }
 
         /// <summary>
+        /// Gets the generator alpha.
+        /// </summary>
+        public int Alpha
+        {
+            // Property added by Sonic-The-Hedgehog-LNK1123 (github.com/Sonic-The-Hedgehog-LNK1123)
+            get { return alpha; }
+        }
+
+        /// <summary>
         /// Returns a <see cref="System.String"/> that represents this instance.
         /// </summary>
         /// <returns>
@@ -176,7 +210,7 @@ namespace STH1123.ReedSolomon
         /// </returns>
         override public String ToString()
         {
-            return "GF(0x" + primitive.ToString("X") + ',' + size + ')';
+            return "GF(0x" + primitive.ToString("X") + ',' + size + ',' + alpha + ')';
         }
     }
 }

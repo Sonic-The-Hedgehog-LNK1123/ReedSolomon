@@ -216,24 +216,6 @@ namespace STH1123.ReedSolomon
             return result;
         }
 
-        /// <summary>
-        /// evaluation of this polynomial at a given point (compatibility version)
-        /// </summary>
-        /// <param name="a">A.</param>
-        /// <returns>evaluation of this polynomial at a given point</returns>
-        internal int simpleEvaluateAt(int a)
-        {
-            // Method added by Sonic-The-Hedgehog-LNK1123 (github.com/Sonic-The-Hedgehog-LNK1123)
-            int result = coefficients[coefficients.Length - 1];
-            int size = coefficients.Length;
-            for (int i = 1; i < size; i++)
-            {
-                int temp = field.multiply(result, a);
-                result = GenericGF.addOrSubtract(temp, getCoefficient(i));
-            }
-            return result;
-        }
-
         internal GenericGFPoly addOrSubtract(GenericGFPoly other)
         {
             if (!field.Equals(other.field))
