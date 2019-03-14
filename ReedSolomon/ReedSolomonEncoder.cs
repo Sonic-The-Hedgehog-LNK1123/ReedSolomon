@@ -30,6 +30,10 @@ namespace STH1123.ReedSolomon
         private readonly GenericGF field;
         private readonly IList<GenericGFPoly> cachedGenerators;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ReedSolomonEncoder"/> class.
+        /// </summary>
+        /// <param name="field">A <see cref="GenericGF"/> that represents the Galois field to use</param>
         public ReedSolomonEncoder(GenericGF field)
         {
             this.field = field;
@@ -52,23 +56,31 @@ namespace STH1123.ReedSolomon
             return cachedGenerators[degree];
         }
 
-        // Method modified by Sonic-The-Hedgehog-LNK1123 (github.com/Sonic-The-Hedgehog-LNK1123)
-        // added check for messages that are too long for the used Galois field
-        public void encode(int[] toEncode, int ecBytes)
+        /// <summary>
+        /// Encodes given set of data codewords with Reed-Solomon.
+        /// </summary>
+        /// <param name="toEncode">data codewords and padding, the amount of padding should match
+        /// the number of error-correction codewords to generate. After encoding, the padding is
+        /// replaced with the error-correction codewords</param>
+        /// <param name="ecBytes">number of error-correction codewords to generate</param>
+        public void Encode(int[] toEncode, int ecBytes)
         {
+            // Method modified by Sonic-The-Hedgehog-LNK1123 (github.com/Sonic-The-Hedgehog-LNK1123)
+            // added check for messages that are too long for the used Galois field
+
             if (toEncode.Length >= field.Size)
             {
-                throw new ArgumentException("Message is too long for this field");
+                throw new ArgumentException("Message is too long for this field", "toEncode");
             }
 
-            if (ecBytes == 0)
+            if (ecBytes <= 0)
             {
-                throw new ArgumentException("No error correction bytes");
+                throw new ArgumentException("No error correction bytes provided", "ecBytes");
             }
             var dataBytes = toEncode.Length - ecBytes;
             if (dataBytes <= 0)
             {
-                throw new ArgumentException("No data bytes provided");
+                throw new ArgumentException("No data bytes provided", "ecBytes");
             }
 
             var generator = buildGenerator(ecBytes);

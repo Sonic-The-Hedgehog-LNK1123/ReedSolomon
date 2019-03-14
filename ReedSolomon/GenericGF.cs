@@ -29,13 +29,44 @@ namespace STH1123.ReedSolomon
     /// <author>Sean Owen</author>
     public sealed class GenericGF
     {
+        /// <summary>
+        /// x^12 + x^6 + x^5 + x^3 + 1
+        /// </summary>
         public static GenericGF AZTEC_DATA_12 = new GenericGF(0x1069, 4096, 1, 2); // x^12 + x^6 + x^5 + x^3 + 1
+
+        /// <summary>
+        /// x^10 + x^3 + 1
+        /// </summary>
         public static GenericGF AZTEC_DATA_10 = new GenericGF(0x409, 1024, 1, 2); // x^10 + x^3 + 1
+
+        /// <summary>
+        /// x^6 + x + 1
+        /// </summary>
         public static GenericGF AZTEC_DATA_6 = new GenericGF(0x43, 64, 1, 2); // x^6 + x + 1
+
+        /// <summary>
+        /// x^4 + x + 1
+        /// </summary>
         public static GenericGF AZTEC_PARAM = new GenericGF(0x13, 16, 1, 2); // x^4 + x + 1
+
+        /// <summary>
+        /// x^8 + x^4 + x^3 + x^2 + 1
+        /// </summary>
         public static GenericGF QR_CODE_FIELD_256 = new GenericGF(0x011D, 256, 0, 2); // x^8 + x^4 + x^3 + x^2 + 1
+
+        /// <summary>
+        /// x^8 + x^5 + x^3 + x^2 + 1
+        /// </summary>
         public static GenericGF DATA_MATRIX_FIELD_256 = new GenericGF(0x012D, 256, 1, 2); // x^8 + x^5 + x^3 + x^2 + 1
+
+        /// <summary>
+        /// x^8 + x^5 + x^3 + x^2 + 1
+        /// </summary>
         public static GenericGF AZTEC_DATA_8 = DATA_MATRIX_FIELD_256;
+
+        /// <summary>
+        /// x^6 + x + 1
+        /// </summary>
         public static GenericGF MAXICODE_FIELD_64 = AZTEC_DATA_6;
 
         private int[] expTable;
@@ -49,14 +80,31 @@ namespace STH1123.ReedSolomon
         /// Create a representation of GF(size) using the given primitive polynomial.
         /// </summary>
         /// <param name="primitive">irreducible polynomial whose coefficients are represented by
-        /// *  the bits of an int, where the least-significant bit represents the constant
-        /// *  coefficient</param>
+        /// the bits of an int, where the least-significant bit represents the constant
+        /// coefficient</param>
         /// <param name="size">the size of the field</param>
         /// <param name="genBase">the factor b in the generator polynomial can be 0- or 1-based
-        /// *  (g(x) = (x+a^b)(x+a^(b+1))...(x+a^(b+2t-1))).
-        /// *  In most cases it should be 1, but for QR code it is 0.</param>
+        /// (g(x) = (x+a^b)(x+a^(b+1))...(x+a^(b+2t-1))).
+        /// In most cases it should be 1, but for QR code it is 0.</param>
+        public GenericGF(int primitive, int size, int genBase)
+            : this(primitive, size, genBase, 2)
+        {
+            // Constructor added by Sonic-The-Hedgehog-LNK1123 (github.com/Sonic-The-Hedgehog-LNK1123)
+            // calls overloaded constructor only
+        }
+
+        /// <summary>
+        /// Create a representation of GF(size) using the given primitive polynomial.
+        /// </summary>
+        /// <param name="primitive">irreducible polynomial whose coefficients are represented by
+        /// the bits of an int, where the least-significant bit represents the constant
+        /// coefficient</param>
+        /// <param name="size">the size of the field</param>
+        /// <param name="genBase">the factor b in the generator polynomial can be 0- or 1-based
+        /// (g(x) = (x+a^b)(x+a^(b+1))...(x+a^(b+2t-1))).
+        /// In most cases it should be 1, but for QR code it is 0.</param>
         /// <param name="alpha">the generator alpha</param>
-        public GenericGF(int primitive, int size, int genBase, int alpha = 2)
+        public GenericGF(int primitive, int size, int genBase, int alpha)
         {
             // Constructor modified by Sonic-The-Hedgehog-LNK1123 (github.com/Sonic-The-Hedgehog-LNK1123)
             // to add support for alpha powers other than 2
@@ -97,7 +145,7 @@ namespace STH1123.ReedSolomon
         }
 
         // Method added by Sonic-The-Hedgehog-LNK1123 (github.com/Sonic-The-Hedgehog-LNK1123)
-        internal int multiplyNoLUT(int x, int y, int primitive, int size)
+        static internal int multiplyNoLUT(int x, int y, int primitive, int size)
         {
             int r = 0;
             while (y > 0)
@@ -144,7 +192,7 @@ namespace STH1123.ReedSolomon
         {
             if (a == 0)
             {
-                throw new ArgumentException();
+                throw new ArithmeticException("log(0) is undefined");
             }
             return logTable[a];
         }
@@ -157,7 +205,7 @@ namespace STH1123.ReedSolomon
         {
             if (a == 0)
             {
-                throw new ArithmeticException();
+                throw new ArithmeticException("inverse(0) is undefined");
             }
             return expTable[size - logTable[a] - 1];
         }

@@ -52,7 +52,7 @@ namespace STH1123.ReedSolomon
             {
                 if (coefficients.Length == 0)
                 {
-                    throw new ArgumentException();
+                    throw new ArgumentException("No coefficients provided", "coefficients");
                 }
                 this.field = field;
                 this.encoding = encode;
@@ -88,31 +88,11 @@ namespace STH1123.ReedSolomon
             {
                 if (coefficients.Length == 0)
                 {
-                    throw new ArgumentException();
+                    throw new ArgumentException("No coefficients provided", "coefficients");
                 }
                 this.field = field;
                 this.encoding = encode;
                 this.coefficients = coefficients;
-            }
-        }
-
-        // Property added by Sonic-The-Hedgehog-LNK1123 (github.com/Sonic-The-Hedgehog-LNK1123)
-        // replaces property originally defined in GenericGF.cs
-        internal GenericGFPoly Zero
-        {
-            get
-            {
-                return new GenericGFPoly(field, new int[] { 0 }, encoding);
-            }
-        }
-
-        // Property added by Sonic-The-Hedgehog-LNK1123 (github.com/Sonic-The-Hedgehog-LNK1123)
-        // replaces property originally defined in GenericGF.cs
-        internal GenericGFPoly One
-        {
-            get
-            {
-                return new GenericGFPoly(field, new int[] { 1 }, encoding);
             }
         }
 
@@ -164,7 +144,7 @@ namespace STH1123.ReedSolomon
             // replaces method originally defined in GenericGF.cs
             if (degree < 0)
             {
-                throw new ArgumentException();
+                throw new ArgumentException("Degree must be positive", "degree");
             }
             if (coefficient == 0)
             {
@@ -302,7 +282,7 @@ namespace STH1123.ReedSolomon
         {
             if (degree < 0)
             {
-                throw new ArgumentException();
+                throw new ArgumentException("Degree must be positive", "degree");
             }
             if (coefficient == 0)
             {
@@ -325,7 +305,7 @@ namespace STH1123.ReedSolomon
             }
             if (other.isZero)
             {
-                throw new ArgumentException("Divide by 0");
+                throw new ArgumentException("Divide by 0", "other");
             }
 
             GenericGFPoly quotient = new GenericGFPoly(field, new int[] { 0 }, encoding);

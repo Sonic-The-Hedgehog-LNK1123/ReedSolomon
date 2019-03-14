@@ -45,6 +45,10 @@ namespace STH1123.ReedSolomon
     {
         private readonly GenericGF field;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ReedSolomonDecoder"/> class.
+        /// </summary>
+        /// <param name="field">A <see cref="GenericGF"/> that represents the Galois field to use</param>
         public ReedSolomonDecoder(GenericGF field)
         {
             this.field = field;
@@ -57,9 +61,23 @@ namespace STH1123.ReedSolomon
         /// </summary>
         /// <param name="received">data and error-correction codewords</param>
         /// <param name="twoS">number of error-correction codewords available</param>
+        /// <returns>false: decoding fails</returns>
+        public bool Decode(int[] received, int twoS)
+        {
+            // Method added by Sonic-The-Hedgehog-LNK1123 (github.com/Sonic-The-Hedgehog-LNK1123)
+            return Decode(received, twoS, null);
+        }
+
+        /// <summary>
+        ///   <p>Decodes given set of received codewords, which include both data and error-correction
+        /// codewords. Really, this means it uses Reed-Solomon to detect and correct errors, in-place,
+        /// in the input.</p>
+        /// </summary>
+        /// <param name="received">data and error-correction codewords</param>
+        /// <param name="twoS">number of error-correction codewords available</param>
         /// <param name="erasurePos">array of zero-based erasure indices</param>
         /// <returns>false: decoding fails</returns>
-        public bool decode(int[] received, int twoS, int[] erasurePos = null)
+        public bool Decode(int[] received, int twoS, int[] erasurePos)
         {
             // Method modified by Sonic-The-Hedgehog-LNK1123 (github.com/Sonic-The-Hedgehog-LNK1123)
             // to add support for erasure and errata correction
@@ -67,7 +85,17 @@ namespace STH1123.ReedSolomon
 
             if (received.Length >= field.Size)
             {
-                return false;
+                throw new ArgumentException("Message is too long for this field", "received");
+            }
+
+            if (twoS <= 0)
+            {
+                throw new ArgumentException("No error correction bytes provided", "twoS");
+            }
+            var dataBytes = received.Length - twoS;
+            if (dataBytes <= 0)
+            {
+                throw new ArgumentException("No data bytes provided", "twoS");
             }
 
             var syndromeCoefficients = new int[twoS];
@@ -113,13 +141,17 @@ namespace STH1123.ReedSolomon
             var sigma = runBerlekampMasseyAlgorithm(forneySyndrome, erasurePos.Length);
 
             if (sigma == null)
+            {
                 return false;
+            }
 
             var errorLocations = findErrorLocations(sigma);
             if (errorLocations == null)
+            {
                 return false;
+            }
 
-            //Prepare errors
+            // Prepare errors
             int[] errorPositions = new int[errorLocations.Length];
 
             for (int i = 0; i < errorLocations.Length; i++)
@@ -127,7 +159,7 @@ namespace STH1123.ReedSolomon
                 errorPositions[i] = field.log(errorLocations[i]);
             }
 
-            //Prepare erasures
+            // Prepare erasures
             int[] erasurePositions = new int[erasurePos.Length];
 
             for (int i = 0; i < erasurePos.Length; i++)
@@ -135,7 +167,7 @@ namespace STH1123.ReedSolomon
                 erasurePositions[i] = received.Length - 1 - erasurePos[i];
             }
 
-            //Combine errors and erasures
+            // Combine errors and erasures
             int[] errataPositions = new int[errorPositions.Length + erasurePositions.Length];
 
             Array.Copy(errorPositions, 0, errataPositions, 0, errorPositions.Length);
@@ -145,7 +177,9 @@ namespace STH1123.ReedSolomon
             var omega = findErrorEvaluator(syndrome, errataLocator);
 
             if (omega == null)
+            {
                 return false;
+            }
 
             int[] errata = new int[errataPositions.Length];
 
@@ -157,7 +191,9 @@ namespace STH1123.ReedSolomon
             var errorMagnitudes = findErrorMagnitudes(omega, errata);
 
             if (errorMagnitudes == null)
+            {
                 return false;
+            }
 
             for (var i = 0; i < errata.Length; i++)
             {
@@ -252,7 +288,10 @@ namespace STH1123.ReedSolomon
             }
 
             List<int> sigmaList = new List<int>(sigma.Coefficients);
-            while (Convert.ToBoolean(sigmaList.Count) && sigmaList[0] == 0) sigmaList.RemoveAt(0);
+            while (Convert.ToBoolean(sigmaList.Count) && sigmaList[0] == 0)
+            {
+                sigmaList.RemoveAt(0);
+            }
 
             sigma = new GenericGFPoly(field, sigmaList.ToArray(), false);
 
