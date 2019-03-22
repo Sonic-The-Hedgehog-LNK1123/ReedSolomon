@@ -36,7 +36,7 @@ namespace STH1123.ReedSolomon
         /// <summary>
         /// Initializes a new instance of the <see cref="GenericGFPoly"/> class.
         /// </summary>
-        /// <param name="field">the {@link GenericGF} instance representing the field to use
+        /// <param name="field">the <see cref="GenericGF"/> instance representing the field to use
         /// to perform computations</param>
         /// <param name="coefficients">coefficients as ints representing elements of GF(size), arranged
         /// from most significant (highest-power term) coefficient to least significant</param>

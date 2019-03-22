@@ -22,7 +22,7 @@ namespace STH1123.ReedSolomon
     /// <summary>
     ///   <p>This class contains utility methods for performing mathematical operations over
     /// the Galois Fields. Operations use a given primitive polynomial in calculations.</p>
-    ///   <p>Throughout this package, elements of the GF are represented as an {@code int}
+    ///   <p>Throughout this package, elements of the GF are represented as an <see cref="Int32"/>
     /// for convenience and speed (but at the cost of memory).
     ///   </p>
     /// </summary>
@@ -80,7 +80,7 @@ namespace STH1123.ReedSolomon
         /// Create a representation of GF(size) using the given primitive polynomial.
         /// </summary>
         /// <param name="primitive">irreducible polynomial whose coefficients are represented by
-        /// the bits of an int, where the least-significant bit represents the constant
+        /// the bits of an <see cref="Int32"/>, where the least-significant bit represents the constant
         /// coefficient</param>
         /// <param name="size">the size of the field</param>
         /// <param name="genBase">the factor b in the generator polynomial can be 0- or 1-based
@@ -97,7 +97,7 @@ namespace STH1123.ReedSolomon
         /// Create a representation of GF(size) using the given primitive polynomial.
         /// </summary>
         /// <param name="primitive">irreducible polynomial whose coefficients are represented by
-        /// the bits of an int, where the least-significant bit represents the constant
+        /// the bits of an <see cref="Int32"/>, where the least-significant bit represents the constant
         /// coefficient</param>
         /// <param name="size">the size of the field</param>
         /// <param name="genBase">the factor b in the generator polynomial can be 0- or 1-based
@@ -223,6 +223,15 @@ namespace STH1123.ReedSolomon
                 return 0;
             }
             return expTable[(logTable[a] + logTable[b]) % (size - 1)];
+        }
+
+        /// <summary>
+        /// Gets the primitive polynomial as an <see cref="Int32"/>.
+        /// </summary>
+        public int Primitive
+        {
+            // Property added by Sonic-The-Hedgehog-LNK1123 (github.com/Sonic-The-Hedgehog-LNK1123)
+            get { return primitive; }
         }
 
         /// <summary>
