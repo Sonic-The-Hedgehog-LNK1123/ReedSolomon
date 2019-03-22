@@ -13,7 +13,7 @@ GenericGF field = new GenericGF(285, 256, 0);
 
 ## Reed-Solomon encoding:
 
-Create a instance of the `ReedSolomonEncoder` class, specifying the Galois field to use:
+Create an instance of the `ReedSolomonEncoder` class, specifying the Galois field to use:
 
 ```C#
 ReedSolomonEncoder rse = new ReedSolomonEncoder(field);
@@ -50,7 +50,7 @@ Providing the locations of some erasures:
 int[] erasures = new int[] { 0, 1, 2 };
 ```
 
-Create a instance of the `ReedSolomonDecoder` class, specifying the Galois field to use:
+Create an instance of the `ReedSolomonDecoder` class, specifying the Galois field to use:
 
 ```C#
 ReedSolomonDecoder rsd = new ReedSolomonDecoder(field);
